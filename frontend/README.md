@@ -12,3 +12,7 @@
 
 Ссылка на макет в Figma Ссылка на сайт: https://deccaid.github.io/mesto/
 
+IP  158.160.144.50
+Frontend  http://decaid.nomoredomainsmonster.ru/
+Backend  http://api.decaid.nomoredomainsmonster.ru/
+
