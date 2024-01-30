@@ -1,0 +1,7 @@
+.card__like-block {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 28px;
+    margin: 10px 0 0 auto;
+}

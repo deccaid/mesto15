@@ -1,0 +1,9 @@
+.root {
+    max-width: 1280px;
+    margin: 0 auto;
+    color: #FFF;
+    font-family: 'Inter', 'Arial', sans-serif;
+}
+body {
+    background: #000000;
+}
