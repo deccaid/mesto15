@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const helmet = require('helmet');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { router } = require('./routes');
 
@@ -22,7 +21,6 @@ app.use((req, res, next) => {
   };
   next();
 });
-app.use(helmet());
 app.use(router);
 app.use(errorLogger);
 app.listen(PORT, () => {
