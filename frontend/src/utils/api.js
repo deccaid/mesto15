@@ -95,7 +95,7 @@ class Api {
 }
 
 const api = new Api({
-  url: "https://mesto.nomoreparties.co/v1/cohort-77",
+  url: "https://api.decaid.nomoredomainsmonster.ru",
   headers: {
     authorization: "5ffe31aa-ca2a-431b-894e-0704b9f5eaf4",
     "content-Type": "application/json",
