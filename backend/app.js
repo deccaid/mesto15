@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { errors } = require('celebrate');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { router } = require('./routes');
 
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
 });
 app.use(router);
 app.use(errorLogger);
+app.use(errors());
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
 });
