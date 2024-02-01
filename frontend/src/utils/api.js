@@ -1,104 +1,105 @@
 class Api {
-  constructor({ url, headers }) {
-    this._url = url;
-    this._headers = headers;
-    this._authorization = headers.authorization;
-  }
+    constructor(options) {
+        this._url = options.baseUrl;
+    }
 
-  #onResponce(res) {
-    return res.ok
-      ? res.json()
-      : res.json().then((errData) => Promise.reject(errData));
-  }
+    _checkRes(res) {
+        return res.ok
+            ? res.json()
+            : Promise.reject
+    }
 
-  getUserInfo() {
-    return fetch(`${this._url}/users/me`, {
-      method: "GET",
-      headers: this._headers,
-    }).then(this.#onResponce);
-  }
+    _request(url, options) {
+        return fetch(url, options).then(this._checkRes)
+    }
 
-  setUserInfo(newUserData) {
-    return fetch(`${this._url}/users/me`, {
-      method: "PATCH",
-      headers: this._headers,
-      body: JSON.stringify(newUserData),
-    }).then(this.#onResponce);
-  }
+    getInfo(token) {
+        return this._request(`${this._url}/users/me`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+    }
 
+    getCards(token) {
+        return this._request(`${this._url}/cards`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+    }
 
-  getCards() {
-    return fetch(`${this._url}/cards/`, {
-      headers: this._headers,
-      method: "GET",
-    }).then(this.#onResponce);
-  }
+    setInfoProfile(data, token) {
+        return this._request(`${this._url}/users/me`, {
+            method: 'PATCH',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                name: data.title,
+                about: data.subtitle,
+            })
+        })
+    }
 
-  getCardById(idCard) {
-    return fetch(`${this._url}/cards/${idCard}`, {
-      headers: this._headers,
-      method: "GET",
-    }).then(this.#onResponce);
-  }
+    setInfoAvatar(data, token) {
+        return this._request(`${this._url}/users/me/avatar`, {
+            method: 'PATCH',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                avatar: data.editAvatar,
+            })
+        })
+    }
 
-  changeLikeCardStatus(id, like) {
-    return fetch(`${this._url}/cards/${id}/likes`, {
-      method: like ? "PUT" : "DELETE",
-      headers: this._headers,
-      body: JSON.stringify({
-        _id: `${id}`,
-      }),
-    }).then(this.#onResponce);
-  }
+    addNewCard(data, token) {
+        return this._request(`${this._url}/cards`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                name: data.placeName,
+                link: data.placeSrc,
+            })
+        })
+    }
 
-  deleteCardID(cardID) {
-    return fetch(`${this._url}/cards/${cardID}`, {
-      method: "DELETE",
-      headers: {
-        authorization: this._authorization,
-      },
-    }).then(this.#onResponce);
-  }
+    addLike(cardID, token) {
+        return this._request(`${this._url}/cards/${cardID}/likes`, {
+            method: 'PUT',
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            }
+        })
+    }
 
-  addCard(data) {
-    return fetch(`${this._url}/cards/`, {
-      headers: this._headers,
-      method: "POST",
-      body: JSON.stringify(data),
-    }).then(this.#onResponce);
-  }
-  addLike(cardID) {
-    return fetch(`${this._url}/cards/${cardID}/likes`, {
-      method: "PUT",
-      headers: {
-        authorization: this._authorization,
-      },
-    }).then(this.#onResponce);
-  }
+    deleteLike(cardID, token) {
+        return this._request(`${this._url}/cards/${cardID}/likes`, {
+            method: 'DELETE',
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            }
+        })
+    }
 
-  deleteLike(cardID) {
-    return fetch(`${this._url}/cards/${cardID}/likes`, {
-      method: "DELETE",
-      headers: {
-        authorization: this._authorization,
-      },
-    }).then(this.#onResponce);
-  }
-
-  setInfoAvatar(data) {
-    return fetch(`${this._url}/users/me/avatar`, {
-      method: "PATCH",
-      headers: this._headers,
-      body: JSON.stringify(data),
-    }).then(this.#onResponce);
-  }
+    deleteCardID(cardID, token) {
+        return this._request(`${this._url}/cards/${cardID}`, {
+            method: 'DELETE',
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+    }
 }
 
 const api = new Api({
-  url: "https://api.decaid.nomoredomainsmonster.ru",
-  headers: {
-    authorization: "5ffe31aa-ca2a-431b-894e-0704b9f5eaf4",
-    "content-Type": "application/json",
-  },
+    baseUrl: 'https://api.decaid.nomoredomainsmonster.ru',
 });
+
 export default api;
