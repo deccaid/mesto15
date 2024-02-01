@@ -1,12 +1,14 @@
-const { Router } = require('express');
-const { userRouter } = require('./users');
-const { cardRouter } = require('./cards');
+const router = require('express').Router();
+const usersRouter = require('./users');
+const cardsRouter = require('./cards');
+const signupRouter = require('./signup');
+const signinRouter = require('./signin');
+const auth = require('../middlewares/auth');
 
-const router = Router();
-router.use('/users', userRouter);
-router.use('/cards', cardRouter);
-router.all('/*', (req, res) => {
-  res.status(404).send({ message: 'Ресурc не найден' });
-});
+router.use('/signup', signupRouter);
+router.use('/signin', signinRouter);
+router.use(auth);
+router.use('/users', usersRouter);
+router.use('/cards', cardsRouter);
 
-module.exports = { router };
+module.exports = router;

@@ -1,125 +1,96 @@
-const cardModel = require('../models/cards');
-const {
-  defaultError,
-  cardValidationError,
-  cardNotValidId,
-} = require('../utils/errors');
+const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
+const { default: mongoose } = require('mongoose');
+const Card = require('../models/card');
+const BadRequestError = require('../errors/BadRequestError');
+const NotFounderError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForBiddenError');
 
-const STATUS_OK = 200;
-const STATUS_CREATED = 201;
-
-// получить все карточки
-const getCards = (req, res) => {
-  cardModel.find()
-    .then((cards) => res
-      .status(STATUS_OK)
-      .send(cards))
-    .catch(() => res
-      .status(defaultError.status)
-      .send({ message: defaultError.message }));
-};
-
-// создать новую карточку
-const createCard = (req, res) => {
+module.exports.addCard = (req, res, next) => {
   const { name, link } = req.body;
-  console.log(req.user._id);
-  cardModel.create({ name, link, owner: req.user._id })
-    .then((card) => res
-      .status(STATUS_CREATED)
-      .send({ _id: card._id }))
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res
-          .status(cardValidationError.status)
-          .send({ message: cardValidationError.message });
-      }
-      return res
-        .status(defaultError.status)
-        .send({ message: defaultError.message });
-    });
-};
-
-// удалить карточку
-const deleteCard = (req, res) => {
-  cardModel.findByIdAndDelete(req.params.cardId)
+  Card.create({ name, link, owner: req.user._id })
     .then((card) => {
-      if (!card) {
-        return res
-          .status(cardNotValidId.status)
-          .send({ message: cardNotValidId.message });
-      }
-      return res.status(STATUS_OK).send({ card });
+      // Card.findById(card._id)
+      //   .orFail()
+      //   .populate('owner')
+      //   .then((data) => res.status(HTTP_STATUS_CREATED).send(data))
+      //   .catch((err) => {
+      //     if (err instanceof mongoose.Error.DocumentNotFoundError) {
+      //       next(new NotFounderError('Карточки с таким ID нет'));
+      //     } else {
+      //       next(err);
+      //     }
+      //   });
+      res.status(HTTP_STATUS_CREATED).send(card);
     })
-    .catch((error) => {
-      if (error.name === 'CastError' && 'ValidationError') {
-        return res
-          .status(cardValidationError.status)
-          .send({ message: cardValidationError.message });
+    .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(err.message));
+      } else {
+        next(err);
       }
-      return res
-        .status(defaultError.status)
-        .send({ message: defaultError.message });
     });
 };
 
-// поставить лайк
-const likeCard = (req, res) => {
-  cardModel.findByIdAndUpdate(
-    req.params.cardId,
-    { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
-    { new: true },
-  )
+module.exports.getCards = (req, res, next) => {
+  Card.find({})
+    // .populate(['owner', 'likes'])
+    .then((cards) => res.status(HTTP_STATUS_OK).send(cards))
+    .catch(next);
+};
+
+module.exports.deleteCard = (req, res, next) => {
+  Card.findById(req.params.cardId)
+    .orFail(new NotFounderError(`Карточка с _id: ${req.params.cardId} не найдена.`))
     .then((card) => {
-      if (!card) {
-        return res.status(cardNotValidId.status).send({ message: cardNotValidId.message });
+      if (!card.owner.equals(req.user._id)) {
+        throw new ForbiddenError('Удалить карточку другого пользователя нельзя');
       }
-      return res.status(STATUS_OK).send({ card });
+      Card.deleteOne(card)
+        .orFail()
+        .then(() => {
+          res.status(HTTP_STATUS_OK).send({ message: 'Карточка удалена' });
+        })
+        .catch((err) => {
+          if (err instanceof mongoose.Error.DocumentNotFoundError) {
+            next(new NotFounderError(`Карточка с _id: ${req.params.cardId} не найдена.`));
+          } else if (err instanceof mongoose.Error.CastError) {
+            next(new BadRequestError(`Некорректный _id карточки: ${req.params.cardId}`));
+          } else {
+            next(err);
+          }
+        });
     })
-    .catch((error) => {
-      if (error.name === 'CastError') {
-        return res
-          .status(cardValidationError.status)
-          .send({ message: cardValidationError.message });
-      } if (error.message === 'notValidId') {
-        res
-          .status(cardNotValidId.status)
-          .send({ message: cardNotValidId.message });
+    .catch(next);
+};
+
+module.exports.likeCard = (req, res, next) => {
+  Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
+    .orFail()
+    // .populate(['owner', 'likes'])
+    .then((card) => res.status(HTTP_STATUS_OK).send(card))
+    .catch((err) => {
+      if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFounderError(`Карточки с таким ID: ${req.params.cardId} нет`));
+      } else if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError(`Некоррекный ID: ${req.params.cardId}`));
+      } else {
+        next(err);
       }
-      return res
-        .status(defaultError.status)
-        .send({ message: defaultError.message });
     });
 };
 
-// удалить лайк
-const deleteLikeCard = (req, res) => {
-  cardModel.findByIdAndUpdate(
-    req.params.cardId,
-    { $pull: { likes: req.user._id } }, // убрать _id из массива
-    { new: true },
-  )
-    .then((card) => {
-      if (!card) {
-        return res.status(cardNotValidId.status).send({ message: 'Некорректный id карточки' });
+module.exports.dislikeCard = (req, res, next) => {
+  Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
+    .orFail()
+    // .populate(['owner', 'likes'])
+    .then((card) => res.status(HTTP_STATUS_OK).send(card))
+    .catch((err) => {
+      if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFounderError(`Карточки с таким ID: ${req.params.cardId} нет`));
+      } else if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError(`Некоррекный ID: ${req.params.cardId}`));
+      } else {
+        next(err);
       }
-      return res.status(STATUS_OK).send(card);
-    })
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res
-          .status(cardValidationError.status)
-          .send({ message: cardValidationError.message });
-      }
-      return res
-        .status(cardValidationError.status)
-        .send({ message: cardValidationError.message });
     });
-};
-
-module.exports = {
-  getCards,
-  createCard,
-  deleteCard,
-  likeCard,
-  deleteLikeCard,
 };
