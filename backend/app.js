@@ -22,8 +22,6 @@ const limiter = rateLimit({
 
 app.use(helmet());
 
-// const NOT_FOUND = 404;
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -34,10 +32,6 @@ app.use(limiter);
 app.use('/', require('./routes/index'));
 
 app.use(errorLogger);
-
-// app.use('*', (req, res) => {
-//   res.status(NOT_FOUND).send({ message: 'Страницы не существует' });
-// });
 
 app.use((req, res, next) => {
   next(new NotFounderError('Страницы не существует'));

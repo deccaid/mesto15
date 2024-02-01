@@ -9,17 +9,6 @@ module.exports.addCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => {
-      // Card.findById(card._id)
-      //   .orFail()
-      //   .populate('owner')
-      //   .then((data) => res.status(HTTP_STATUS_CREATED).send(data))
-      //   .catch((err) => {
-      //     if (err instanceof mongoose.Error.DocumentNotFoundError) {
-      //       next(new NotFounderError('Карточки с таким ID нет'));
-      //     } else {
-      //       next(err);
-      //     }
-      //   });
       res.status(HTTP_STATUS_CREATED).send(card);
     })
     .catch((err) => {
@@ -33,7 +22,6 @@ module.exports.addCard = (req, res, next) => {
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
-    // .populate(['owner', 'likes'])
     .then((cards) => res.status(HTTP_STATUS_OK).send(cards))
     .catch(next);
 };
