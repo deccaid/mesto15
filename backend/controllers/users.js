@@ -1,7 +1,6 @@
 const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
 const { default: mongoose } = require('mongoose');
 
-const { SECRET_KEY } = process.env;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
@@ -87,12 +86,17 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, SECRET_KEY, { expiresIn: '7d' });
+      const jwtSecretWord = process.env.NODE_ENV !== 'production'
+        ? 'not-secret-key'
+        : process.env.JWT_SECRET;
+      const token = jwt.sign(
+        { _id: user._id },
+        jwtSecretWord,
+        { expiresIn: '7d' },
+      );
       res.send({ token });
     })
-    .catch((err) => {
-      next(err);
-    });
+    .catch((err) => next(err));
 };
 
 module.exports.getUserMe = (req, res, next) => {
