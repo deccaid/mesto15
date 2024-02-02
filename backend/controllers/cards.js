@@ -48,13 +48,19 @@ module.exports.deleteCard = (req, res, next) => {
           }
         });
     })
-    .catch(next);
+    .catch((err) => {
+      switch (err.name) {
+        case 'CastError':
+          return next(new BadRequestError('Карточка не найдена'));
+        default:
+          return next(err);
+      }
+    });
 };
 
 module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
     .orFail()
-    // .populate(['owner', 'likes'])
     .then((card) => res.status(HTTP_STATUS_OK).send(card))
     .catch((err) => {
       if (err instanceof mongoose.Error.DocumentNotFoundError) {
@@ -70,7 +76,6 @@ module.exports.likeCard = (req, res, next) => {
 module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
     .orFail()
-    // .populate(['owner', 'likes'])
     .then((card) => res.status(HTTP_STATUS_OK).send(card))
     .catch((err) => {
       if (err instanceof mongoose.Error.DocumentNotFoundError) {

@@ -31,11 +31,10 @@ app.use(requestLogger);
 app.use(limiter);
 app.use('/', require('./routes/index'));
 
-app.use(errorLogger);
-
 app.use((req, res, next) => {
   next(new NotFounderError('Страницы не существует'));
 });
+app.use(errorLogger);
 
 app.use(errors());
 
